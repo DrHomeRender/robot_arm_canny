@@ -29,8 +29,33 @@
   },
   
   "mode": {
-    "test_mode": true,
+    "test_mode": false,
     "_note_test_mode": "true: 테스트 모드 (Sector ID 기반 정답 좌표 전송), false: 실제 모드 (카메라 영상에서 좌표 계산)"
+  },
+  
+  "pixel_calibration": {
+    "pixel_to_cm_ratio": 0.125038,
+    "_note_ratio": "픽셀 대비 실제 길이 비율 (cm/px) - calibration_tool.py로 측정",
+    
+      "sector1": {
+        "offset_x_cm": 0.0,
+        "offset_y_cm": -30.5,
+        "offset_z_cm": -2.0,
+        "_note": "Sector 1: Y축 -195mm 조정 (5.2 → -190.1)"
+      },
+    "sector2": {
+      "offset_x_cm": 0.0,
+      "offset_y_cm": -3.0,
+      "offset_z_cm": -2.0,
+      "_note": "Sector 2 (정면) 오프셋 - 현재 테스트 값"
+    },
+    "sector3": {
+      "offset_x_cm": 0.0,
+      "offset_y_cm": 2.0,
+      "offset_z_cm": -2.0,
+      "_note": "Sector 3 (오른쪽 45도) 오프셋"
+    },
+    "_note_offset": "섹터별 좌표 보정 오프셋 (cm 단위). 예: '2cm 더 가야 해' → offset_y_cm: 2.0, 'Z축 1cm 더 높게' → offset_z_cm: 1.0"
   },
   
   "auto_send": {
@@ -42,26 +67,68 @@
     "_note_order_id": "수동 모드에서만 사용 (자동 모드에서는 무시됨)"
   },
   
-  "calibration_points": [
-    {
-      "name": "center",
-      "pixel": [320, 258],
-      "robot": [-298.1, 5.2, 206.2],
-      "_note": "⭐ 중앙 (UP+DOWN 중간) - 현재 카메라 위치 기준"
-    },
-    {
-      "name": "left",
-      "pixel": [196, 249],
-      "robot": [-298.1, -100.0, 206.2],
-      "_note": "⬅️ 왼쪽 - 중앙에서 Y -105mm 추정"
-    },
-    {
-      "name": "right",
-      "pixel": [441, 250],
-      "robot": [-298.1, 110.0, 206.2],
-      "_note": "➡️ 오른쪽 - 중앙에서 Y +105mm 추정"
-    }
-  ],
+  "calibration_points": {
+    "sector1": [
+      {
+        "name": "center",
+        "pixel": [320, 258],
+        "robot": [-298.1, 5.2, 206.2],
+        "_note": "⭐ 섹터2와 동일 (카메라 고정)"
+      },
+      {
+        "name": "left",
+        "pixel": [196, 249],
+        "robot": [-298.1, -100.0, 206.2],
+        "_note": "⭐ 섹터2와 동일"
+      },
+      {
+        "name": "right",
+        "pixel": [441, 250],
+        "robot": [-298.1, 110.0, 206.2],
+        "_note": "⭐ 섹터2와 동일"
+      }
+    ],
+    "sector2": [
+      {
+        "name": "center",
+        "pixel": [320, 258],
+        "robot": [-298.1, 5.2, 206.2],
+        "_note": "⭐ 섹터2 중앙 (캘리브레이션 완료)"
+      },
+      {
+        "name": "left",
+        "pixel": [196, 249],
+        "robot": [-298.1, -100.0, 206.2],
+        "_note": "섹터2 왼쪽"
+      },
+      {
+        "name": "right",
+        "pixel": [441, 250],
+        "robot": [-298.1, 110.0, 206.2],
+        "_note": "섹터2 오른쪽"
+      }
+    ],
+    "sector3": [
+      {
+        "name": "center",
+        "pixel": [320, 258],
+        "robot": [-216.1, 202.3, 219.1],
+        "_note": "섹터3 중앙"
+      },
+      {
+        "name": "left",
+        "pixel": [196, 249],
+        "robot": [-216.1, 97.1, 219.1],
+        "_note": "섹터3 왼쪽"
+      },
+      {
+        "name": "right",
+        "pixel": [441, 250],
+        "robot": [-216.1, 307.1, 219.1],
+        "_note": "섹터3 오른쪽"
+      }
+    ]
+  },
   
   "robot_transform": {
     "method": "affine_transform_3d",

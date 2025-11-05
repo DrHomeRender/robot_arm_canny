@@ -66,19 +66,74 @@ def run_vision_loop(config, orders_ref, monitor, test_mode=False):
         test_mode: True면 테스트 모드 (Sector ID 기반), False면 실제 모드 (영상 계산)
     """
 
+    # 설정 변수들 (R키로 재로드 가능)
     cam_cfg = config["camera"]
     obj_cfg = config["object"]
     edge_cfg = config["edge_detection"]
     axis_cfg = config["axis_detection"]
     auto_cfg = config["auto_send"]
-    calibration_points = config.get("calibration_points", [])
+    # calibration_points는 섹터별로 구분되어 있음
+    # 섹터별 calibration_points
+    calib_pts_config = config.get("calibration_points", {})
+    calibration_points_sector1 = calib_pts_config.get("sector1", [])
+    calibration_points_sector2 = calib_pts_config.get("sector2", [])
+    calibration_points_sector3 = calib_pts_config.get("sector3", [])
     robot_transform = config.get("robot_transform", {})
+    pixel_calibration = config.get("pixel_calibration", {})
     send_interval = auto_cfg["send_interval_sec"]
     
     # 기본 자세각
     base_roll = robot_transform.get("base_roll", 0.0)
     base_pitch = robot_transform.get("base_pitch", 0.0)
     base_yaw = robot_transform.get("base_yaw", 0.0)
+    
+    # config 재로드 함수
+    def reload_config():
+        """config.json을 다시 읽어서 설정 업데이트 (카메라 설정 제외)"""
+        nonlocal calibration_points_sector1, calibration_points_sector2, calibration_points_sector3
+        nonlocal robot_transform, pixel_calibration
+        nonlocal base_roll, base_pitch, base_yaw, send_interval
+        nonlocal edge_cfg, axis_cfg, obj_cfg
+        
+        try:
+            print("[DEBUG] Config 파일 읽기 시작...")
+            from config_loader import load_config
+            new_config = load_config()
+            print("[DEBUG] Config 파일 읽기 성공")
+            
+            # 카메라 설정은 건드리지 않음 (이미 열려있음)
+            # 안전하게 업데이트 가능한 설정만 변경
+            calib_pts_config = new_config.get("calibration_points", {})
+            calibration_points_sector1 = calib_pts_config.get("sector1", [])
+            calibration_points_sector2 = calib_pts_config.get("sector2", [])
+            calibration_points_sector3 = calib_pts_config.get("sector3", [])
+            robot_transform = new_config.get("robot_transform", robot_transform)
+            pixel_calibration = new_config.get("pixel_calibration", pixel_calibration)
+            edge_cfg = new_config.get("edge_detection", edge_cfg)
+            axis_cfg = new_config.get("axis_detection", axis_cfg)
+            obj_cfg = new_config.get("object", obj_cfg)
+            
+            # 자세각 업데이트
+            base_roll = robot_transform.get("base_roll", 0.0)
+            base_pitch = robot_transform.get("base_pitch", 0.0)
+            base_yaw = robot_transform.get("base_yaw", 0.0)
+            
+            send_interval = new_config.get("auto_send", {}).get("send_interval_sec", send_interval)
+            
+            print(f"\n[CONFIG RELOADED] 설정이 다시 로드되었습니다.")
+            print(f"  - Calibration points: Sector1={len(calibration_points_sector1)}, Sector2={len(calibration_points_sector2)}, Sector3={len(calibration_points_sector3)}")
+            print(f"  - Sector offsets:")
+            for sector_num in [1, 2, 3]:
+                sector_key = f"sector{sector_num}"
+                sector_offset = pixel_calibration.get(sector_key, {})
+                print(f"    Sector {sector_num}: X={sector_offset.get('offset_x_cm', 0.0):.2f}cm, Y={sector_offset.get('offset_y_cm', 0.0):.2f}cm, Z={sector_offset.get('offset_z_cm', 0.0):.2f}cm")
+            print(f"  - Base angles: Roll={base_roll:.2f}, Pitch={base_pitch:.2f}, Yaw={base_yaw:.2f}\n")
+            return True
+        except Exception as e:
+            import traceback
+            print(f"\n[ERROR] Config 재로드 실패: {e}")
+            print(f"[ERROR] 상세 정보:\n{traceback.format_exc()}\n")
+            return False
 
     cap = cv2.VideoCapture(cam_cfg["camera_number"])
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, cam_cfg["width"])
@@ -92,7 +147,7 @@ def run_vision_loop(config, orders_ref, monitor, test_mode=False):
         print("[Mode] 테스트 모드: Sector ID 기반 정답 좌표 전송")
     else:
         print("[Mode] 실제 모드: 카메라 영상에서 좌표 계산 및 전송")
-    print("키보드: [SPACE] 수동 전송, [Q/ESC] 종료")
+    print("키보드: [SPACE] 수동 전송, [R] Config 재로드, [Q/ESC] 종료")
     print("자동 모드: Firebase status=waiting_pose 감지 시 자동 전송\n")
 
     while True:
@@ -161,14 +216,25 @@ def run_vision_loop(config, orders_ref, monitor, test_mode=False):
                         # 섹터 ID 가져오기 (Z값 결정용)
                         sector_id = monitor.sector_id if monitor else None
                         
-                        # 픽셀 좌표 → 로봇 좌표 변환 (고정밀)
+                        # 섹터별 캘리브레이션 포인트 선택
+                        if sector_id == 1:
+                            selected_calibration_points = calibration_points_sector1
+                        elif sector_id == 2:
+                            selected_calibration_points = calibration_points_sector2
+                        elif sector_id == 3:
+                            selected_calibration_points = calibration_points_sector3
+                        else:
+                            selected_calibration_points = calibration_points_sector2
+                        
+                        # 픽셀 좌표 → 로봇 좌표 변환
                         robot_x, robot_y, robot_z, roll, pitch, yaw = pixel_to_robot_coords(
-                            cx, cy, calibration_points,
+                            cx, cy, selected_calibration_points,
                             sector_id=sector_id,
                             sector_answers=SECTOR_ANSWERS,
                             base_roll=base_roll,
                             base_pitch=base_pitch,
-                            base_yaw=base_yaw
+                            base_yaw=base_yaw,
+                            pixel_calibration=pixel_calibration
                         )
                         
                         send_to_firebase(orders_ref, order_id, robot_x, robot_y, robot_z, roll, pitch, yaw)
@@ -187,6 +253,10 @@ def run_vision_loop(config, orders_ref, monitor, test_mode=False):
 
         if key in [27, ord("q")]:
             break
+        elif key in [ord("r"), ord("R")]:
+            # R키: Config 재로드
+            print("[INFO] R키 감지됨 - Config 재로드 시작...")
+            reload_config()
         elif key == ord(" "):
             # 수동 전송 모드
             order_id = monitor.target_order_id if monitor else auto_cfg["firebase_order_id"]
@@ -217,14 +287,25 @@ def run_vision_loop(config, orders_ref, monitor, test_mode=False):
                     # 섹터 ID 가져오기 (Z값 결정용)
                     sector_id = monitor.sector_id if monitor else None
                     
-                    # 픽셀 좌표 → 로봇 좌표 변환 (고정밀)
+                    # 섹터별 캘리브레이션 포인트 선택
+                    if sector_id == 1:
+                        selected_calibration_points = calibration_points_sector1
+                    elif sector_id == 2:
+                        selected_calibration_points = calibration_points_sector2
+                    elif sector_id == 3:
+                        selected_calibration_points = calibration_points_sector3
+                    else:
+                        selected_calibration_points = calibration_points_sector2
+                    
+                    # 픽셀 좌표 → 로봇 좌표 변환
                     robot_x, robot_y, robot_z, roll, pitch, yaw = pixel_to_robot_coords(
-                        cx, cy, calibration_points,
+                        cx, cy, selected_calibration_points,
                         sector_id=sector_id,
                         sector_answers=SECTOR_ANSWERS,
                         base_roll=base_roll,
                         base_pitch=base_pitch,
-                        base_yaw=base_yaw
+                        base_yaw=base_yaw,
+                        pixel_calibration=pixel_calibration
                     )
                     
                     send_to_firebase(orders_ref, order_id, robot_x, robot_y, robot_z, roll, pitch, yaw)
