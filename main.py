@@ -7,13 +7,11 @@ main.py
 - Vision 루프 실행
 
 사용법:
-    python main.py          # 실제 모드: 카메라 영상에서 좌표 계산
-    python main.py test     # 테스트 모드: Sector ID 기반 정답 좌표 전송
+    python main.py          # config.json의 mode.test_mode 설정에 따라 실행 모드 결정
 ------------------------------------
 """
 
 import sys
-import argparse
 import time
 from datetime import datetime
 
@@ -24,14 +22,12 @@ from vision_processor import run_vision_loop
 
 
 def main():
-    # 인자 파싱
-    parser = argparse.ArgumentParser(description="myproject - 영상 기반 좌표 전송")
-    parser.add_argument("mode", nargs="?", default=None,
-                       help="실행 모드: 'test' (테스트 모드) 또는 생략 (실제 모드)")
-    args = parser.parse_args()
+    # 1️⃣ 설정 로드
+    config = load_config()
     
-    # test 인자만 받으면 테스트 모드, 그 외는 모두 실제 모드
-    test_mode = (args.mode == "test")
+    # config.json에서 test_mode 읽기
+    mode_cfg = config.get('mode', {})
+    test_mode = mode_cfg.get('test_mode', False)
     
     print("=" * 80)
     if test_mode:
@@ -42,11 +38,9 @@ def main():
     print(f"[시작시간] {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("")
 
-    # 1️⃣ 설정 로드
-    config = load_config()
     cam_cfg = config.get('camera', {})
     auto_cfg = config.get('auto_send', {})
-    print(f"[Mode] {'테스트 모드 (Sector ID 기반)' if test_mode else '실제 모드 (영상 계산)'}")
+    print(f"[Mode] {'테스트 모드 (Sector ID 기반)' if test_mode else '실제 모드 (영상 계산)'} (config.json에서 설정)")
     print(f"[Config] 카메라 번호: {cam_cfg.get('camera_number', 0)}")
     print(f"[Config] 자동 전송 모드: {auto_cfg.get('active_spacebar', False)}")
     print("")

@@ -91,15 +91,15 @@ pip install -r requirements.txt
 
 ## 🎮 실행 방법
 
-### 테스트 모드 (Sector ID 기반 정답 좌표 전송)
+### 실행 방법
 
 **Windows (CMD):**
 ```cmd
 # 가상환경 활성화
 robot\Scripts\activate
 
-# 테스트 모드 실행
-python main.py test
+# 실행
+python main.py
 ```
 
 **Windows (PowerShell):**
@@ -107,8 +107,8 @@ python main.py test
 # 가상환경 활성화
 .\robot\Scripts\Activate.ps1
 
-# 테스트 모드 실행
-python main.py test
+# 실행
+python main.py
 ```
 
 **Linux/Mac:**
@@ -116,42 +116,32 @@ python main.py test
 # 가상환경 활성화
 source robot/bin/activate
 
-# 테스트 모드 실행
-python main.py test
+# 실행
+python main.py
 ```
 
-**동작 방식:**
+### 모드 설정
+
+실행 모드는 `config.json`의 `mode.test_mode` 설정으로 제어합니다:
+
+```json
+{
+  "mode": {
+    "test_mode": false,  // true: 테스트 모드, false: 실제 모드
+    "_note_test_mode": "true: 테스트 모드 (Sector ID 기반 정답 좌표 전송), false: 실제 모드 (카메라 영상에서 좌표 계산)"
+  }
+}
+```
+
+#### 테스트 모드 (`test_mode: true`)
 - Firebase의 `items[0].id` 값 (1, 2, 3)을 읽어서 해당 섹터의 정답 좌표를 전송
 - 웹에서 1/2/3 버튼을 누르면 자동으로 해당 섹터 좌표 전송
 
-### 실제 모드 (카메라 영상 기반 좌표 계산)
-
-**Windows (CMD):**
-```cmd
-# 가상환경 활성화
-robot\Scripts\activate
-
-# 실제 모드 실행
-python main.py
-```
-
-**Windows (PowerShell):**
-```powershell
-# 가상환경 활성화
-.\robot\Scripts\Activate.ps1
-
-# 실제 모드 실행
-python main.py
-```
-
-**Linux/Mac:**
-```bash
-# 가상환경 활성화
-source robot/bin/activate
-
-# 실제 모드 실행
-python main.py
-```
+#### 실제 모드 (`test_mode: false`)
+- 카메라 영상에서 물체 감지 (경계 검출)
+- 픽셀 좌표를 로봇 좌표로 변환 (아핀 변환)
+- Firebase의 `items[0].id`에서 섹터 ID를 읽어 Z값 및 자세각 결정
+- 변환된 좌표를 Firebase로 전송
 
 **동작 방식:**
 - 카메라 영상에서 물체 감지 (경계 검출)
@@ -187,6 +177,7 @@ python main.py
 ### `config.json`
 
 주요 설정 항목:
+- `mode.test_mode`: 실행 모드 설정 (true: 테스트 모드, false: 실제 모드)
 - `camera`: 카메라 번호, 해상도, FOV 설정
 - `object`: 물체의 실제 최단축 길이
 - `calibration_points`: 픽셀-로봇 좌표 매핑 포인트 (3개 이상)

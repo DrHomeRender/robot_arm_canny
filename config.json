@@ -28,6 +28,11 @@
     "_note": "B점 찾기 시 각도 허용 범위 (±도)"
   },
   
+  "mode": {
+    "test_mode": true,
+    "_note_test_mode": "true: 테스트 모드 (Sector ID 기반 정답 좌표 전송), false: 실제 모드 (카메라 영상에서 좌표 계산)"
+  },
+  
   "auto_send": {
     "active_spacebar": false,
     "send_interval_sec": 1.0,
