@@ -1,0 +1,97 @@
+{
+  "camera": {
+    "camera_number": 0,
+    "width": 640,
+    "height": 480,
+    "hfov_degree": 60.0,
+    "vfov_degree": 60.0,
+    "fov_correction_factor": 1.35,
+    "_note_fov": "카메라 FOV 설정 (거리 계산에 사용)"
+  },
+  
+  "object": {
+    "real_shortest_axis_mm": 80,
+    "_note_shortest": "감지할 물체의 실제 최단축 길이 (mm 단위)",
+    "_example": "예: 리모컨 짧은 쪽 3.5cm = 35mm, 컵 지름 8cm = 80mm"
+  },
+  
+  "edge_detection": {
+    "canny_threshold1": 50,
+    "canny_threshold2": 150,
+    "gaussian_blur_kernel": 5,
+    "min_contour_area": 500,
+    "_note": "경계 검출 파라미터"
+  },
+  
+  "axis_detection": {
+    "angle_tolerance_deg": 15,
+    "_note": "B점 찾기 시 각도 허용 범위 (±도)"
+  },
+  
+  "auto_send": {
+    "active_spacebar": false,
+    "send_interval_sec": 1.0,
+    "firebase_order_id": "ORDER-212",
+    "_note_spacebar": "true: 스페이스바 수동 전송, false: Firebase 실시간 모니터링 자동 전송",
+    "_note_auto": "자동 전송 모드: Firebase에서 status=waiting_pose && pose_required=true인 주문을 찾아서 자동 전송",
+    "_note_order_id": "수동 모드에서만 사용 (자동 모드에서는 무시됨)"
+  },
+  
+  "calibration_points": [
+    {
+      "name": "center",
+      "pixel": [320, 258],
+      "robot": [-298.1, 5.2, 206.2],
+      "_note": "⭐ 중앙 (UP+DOWN 중간) - 현재 카메라 위치 기준"
+    },
+    {
+      "name": "left",
+      "pixel": [196, 249],
+      "robot": [-298.1, -100.0, 206.2],
+      "_note": "⬅️ 왼쪽 - 중앙에서 Y -105mm 추정"
+    },
+    {
+      "name": "right",
+      "pixel": [441, 250],
+      "robot": [-298.1, 110.0, 206.2],
+      "_note": "➡️ 오른쪽 - 중앙에서 Y +105mm 추정"
+    }
+  ],
+  
+  "robot_transform": {
+    "method": "affine_transform_3d",
+    "base_roll": 179.98,
+    "base_pitch": 9.36,
+    "base_yaw": 0.08,
+    "_note_method": "3D 아핀 변환으로 Camera XYZ → Robot XYZ 자동 계산 (하드코딩 0%)",
+    "_note_formula": "Robot_X = a*Camera_X + tx, Robot_Y = d*Camera_Y + ty, Robot_Z = e*Camera_X + f*Camera_Y + tz",
+    "_note_interpolation": "3개 캘리브레이션 포인트로 모든 위치 자동 보간"
+  },
+   
+  "test_sectors": {
+    "sector1": {
+      "target_coords": [-298.0, -190.1, 208.1, -170.26, 10.09, 118.35],
+      "camera_pose": [33.13, -14.15, 83.93, -12.12, -79.8, -9.84],
+      "_note": "왼쪽 뒤 (정답 좌표)"
+    },
+    "sector2": {
+      "target_coords": [-298.1, 5.2, 206.2, -178.06, 10.01, 78.67],
+      "camera_pose": [-14.5, -12.12, 83.93, -12.12, -79.8, -9.84],
+      "_note": "중앙 뒤 (정답 좌표)"
+    },
+    "sector3": {
+      "target_coords": [-216.1, 202.3, 219.1, -174.37, 9.35, 37.71],
+      "camera_pose": [-62.92, -1.23, 71.63, -12.12, -79.8, -9.84],
+      "_note": "오른쪽 앞 (정답 좌표)"
+    },
+    "current_calibration": {
+      "target_coords": [-216.1, 202.3, 219.1, -174.37, 9.35, 37.71],
+      "camera_coords": [5.7, 1.8, 165.5],
+      "_note": "✅ 신뢰성 높은 캘리브레이션 완료 (2025-10-28 23:04:08)",
+      "_timestamp": "ORDER-240",
+      "_reliable": "로봇이 물체를 성공적으로 집은 상태에서 측정됨"
+    },
+    "_format": "[X, Y, Z, Roll, Pitch, Yaw]"
+  }
+}
+

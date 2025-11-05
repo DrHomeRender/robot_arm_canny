@@ -1,0 +1,10 @@
+# myproject - 영상 기반 좌표 전송 시스템
+# Python 3.10+ 권장
+
+# Firebase 연동
+firebase-admin>=7.0.0,<8.0.0
+
+# 영상 처리
+opencv-python>=4.11.0,<5.0.0
+numpy>=1.26.0,<2.0.0
+
