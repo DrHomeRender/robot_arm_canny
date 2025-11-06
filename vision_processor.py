@@ -159,6 +159,12 @@ def run_vision_loop(config, orders_ref, monitor, test_mode=False):
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         blurred = cv2.GaussianBlur(gray, (edge_cfg["gaussian_blur_kernel"],) * 2, 0)
         edges = cv2.Canny(blurred, edge_cfg["canny_threshold1"], edge_cfg["canny_threshold2"])
+        
+        # Morphological operations: 작은 디테일 제거, 외곽선만 남김
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+        edges = cv2.dilate(edges, kernel, iterations=2)  # 엣지 확장
+        edges = cv2.erode(edges, kernel, iterations=2)   # 다시 축소 (구멍 메우기)
+        edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)  # 닫기 연산
 
         contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         display = frame.copy()
@@ -249,6 +255,7 @@ def run_vision_loop(config, orders_ref, monitor, test_mode=False):
                         print(f"[AUTO] ⚠️  물체가 감지되지 않았습니다")
 
         cv2.imshow("Camera2", display)
+        cv2.imshow("Edges", edges)
         key = cv2.waitKey(1) & 0xFF
 
         if key in [27, ord("q")]:
